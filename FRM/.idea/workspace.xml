@@ -17,11 +17,9 @@
           <file leaf-file-name="FRM_function.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/FRM_function.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="306">
-                  <caret line="18" column="37" lean-forward="true" selection-start-line="18" selection-start-column="37" selection-end-line="18" selection-end-column="37" />
-                  <folding>
-                    <element signature="e#1381#1399#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="493">
+                  <caret line="29" column="19" lean-forward="true" selection-start-line="29" selection-start-column="19" selection-end-line="29" selection-end-column="19" />
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -227,11 +225,9 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FRM_function.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="18" column="37" lean-forward="true" selection-start-line="18" selection-start-column="37" selection-end-line="18" selection-end-column="37" />
-          <folding>
-            <element signature="e#1381#1399#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="493">
+          <caret line="29" column="19" lean-forward="true" selection-start-line="29" selection-start-column="19" selection-end-line="29" selection-end-column="19" />
+          <folding />
         </state>
       </provider>
     </entry>
