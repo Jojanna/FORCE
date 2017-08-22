@@ -37,7 +37,7 @@ from FRM_function import  HS_2_phase_L, fluids_calc, reuss_fluids, sat, dry_rock
 
 check_bounds_only = False
 show_charts = True
-save_las = False
+save_las = True
 save_fig = False
 
 
@@ -89,8 +89,8 @@ def data_load(filename):
     units_dict = dict(zip(logs, units))
 
     logs_df = pd.DataFrame()
-    for log, unit in zip(logs, units):
-        logs_df[" ".join([str(log),str(unit)])] = np.where(data[str(log)] == null, np.nan, data[str(log)])
+    for log in logs:
+        logs_df[str(log)] = np.where(data[str(log)] == null, np.nan, data[str(log)])
 
     return logs_df, units_dict
 
@@ -112,18 +112,18 @@ for well in wells:
     data, units_dict = data_load(path)
 
 
-    data.dropna(subset = ["Vp m/s"], inplace=True)#, how = 'all', axis = 0)
-    data.dropna(subset=["Vs m/s"], inplace=True)
-    data.dropna(subset=["RhoB g/cc"], inplace=True)
+    data.dropna(subset = ["Vp"], inplace=True)#, how = 'all', axis = 0)
+    data.dropna(subset=["Vs"], inplace=True)
+    data.dropna(subset=["RhoB"], inplace=True)
     #print (data)
-    data["PhiE frac"] = data["PhiE frac"].where(data["PhiE frac"].notnull(), 0)
-    data["PhiT frac"] = data["PhiT frac"].where(data["PhiT frac"].notnull(), 0)
-    data["Vsh frac"] = data["Vsh frac"].where(data["Vsh frac"].notnull(), 1)
-    data["Sw frac"] = data["Sw frac"].where(data["Sw frac"].notnull(), 1)
+    data["PhiE"] = data["PhiE"].where(data["PhiE"].notnull(), 0)
+    data["PhiT"] = data["PhiT"].where(data["PhiT"].notnull(), 0)
+    data["Vsh"] = data["Vsh"].where(data["Vsh"].notnull(), 1)
+    data["Sw"] = data["Sw"].where(data["Sw"].notnull(), 1)
 
-    data["Vp/Vs"] = data["Vp m/s"]/data["Vs m/s"]
-    data["AI m/s*g/cc"] = data["Vp m/s"] * data["RhoB g/cc"]
-    data["SI m/s*g/cc"] = data["Vs m/s"] * data["RhoB g/cc"]
+    data["Vp/Vs"] = data["Vp"]/data["Vs"]
+    data["AI"] = data["Vp"] * data["RhoB"]
+    data["SI"] = data["Vs"] * data["RhoB"]
 
 
 
@@ -134,19 +134,19 @@ for well in wells:
     #print (min_md)
     #data = data.loc[data["Md ft"] > min_md]
 
-    data["K_Matrix"], data["Mu_Matrix"] =  HS_2_phase_L(k_qtz, k_clay, mu_qtz, mu_clay, data["Vsh frac"])
+    data["K_Matrix"], data["Mu_Matrix"] =  HS_2_phase_L(k_qtz, k_clay, mu_qtz, mu_clay, data["Vsh"])
 
     rho_brine, k_brine, rho_h, k_h = fluids_calc(parameters["In Situ Pressure (psi)"]* 0.00689476, parameters["In Situ Temperature (C)"], parameters["In Situ Fluid"], parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR"])
-    data["K_Fluid"], data["RhoB_Fluid"] = reuss_fluids(rho_brine, k_brine, rho_h, k_h, data["Sw frac"])
+    data["K_Fluid"], data["RhoB_Fluid"] = reuss_fluids(rho_brine, k_brine, rho_h, k_h, data["Sw"])
 
-    data["K_sat"], data["Mu_sat"] = (sat(data["Vp m/s"], data["Vs m/s"], data["RhoB g/cc"]))
+    data["K_sat"], data["Mu_sat"] = (sat(data["Vp"], data["Vs"], data["RhoB"]))
     data["K_sat GPa"] = data["K_sat"] / np.power(10, 9)
     data["Mu_sat GPa"] = data["Mu_sat"] / np.power(10, 9)
 
     data["Poisson's Ratio"] = (3 * data["K_sat"] - 2 * data["Mu_sat"]) / (2 * (3 * data["K_sat"] + data["Mu_sat"]))
-    data["Lambda GPa"] = (data["K_sat GPa"] - 2/3 * data["Mu_sat GPa"])
-    data["Lambda-Rho GPa*g/cc"] = data["Lambda GPa"] * data["RhoB g/cc"]
-    data["Mu-Rho GPa*g/cc"] = data["Mu_sat GPa"]* data["RhoB g/cc"]
+    data["Lambda"] = (data["K_sat GPa"] - 2/3 * data["Mu_sat GPa"])
+    data["Lambda-Rho"] = data["Lambda"] * data["RhoB"]
+    data["Mu-Rho"] = data["Mu_sat"]* data["RhoB"]
 
     units_dict["K"] = "GPa"
     units_dict["Mu"] = "GPa"
@@ -157,10 +157,10 @@ for well in wells:
     units_dict["Lambda-Rho"] = "GPa*g/cc"
     units_dict["Mu-Rho"] = "GPa*g/cc"
 
-    data["K_pore"], data["K_dry"] = dry_rock(data["PhiE frac"], data["K_sat"], data["K_Fluid"], data["K_Matrix"])
+    data["K_pore"], data["K_dry"] = dry_rock(data["PhiE"], data["K_sat"], data["K_Fluid"], data["K_Matrix"])
     data["K_pore_norm"] =  data["K_pore"] / data["K_Matrix"]
     data["K_dry_norm"] = data["K_dry"]/data["K_Matrix"]
-    data["K_out"] = fluid_sub_k(data["K_Matrix"], data["PhiE frac"], data["K_pore"], data["K_Fluid"])
+    data["K_out"] = fluid_sub_k(data["K_Matrix"], data["PhiE"], data["K_pore"], data["K_Fluid"])
     data["K_out_norm"] = data["K_out"] / data["K_Matrix"]
 
     porosity = np.arange(0, 1.01, 0.01)
@@ -177,9 +177,9 @@ for well in wells:
     fig1, (ax1, ax2) = plt.subplots(1, 2)
     fig1.set_size_inches(14.6, 10.3)
 
-    mappable1 = ax1.scatter(data["PhiE frac"], data["K_dry_norm"], s=area, c=data["Vsh frac"], cmap=cmap, norm=norm, alpha=0.5,
+    mappable1 = ax1.scatter(data["PhiE"], data["K_dry_norm"], s=area, c=data["Vsh"], cmap=cmap, norm=norm, alpha=0.5,
                             edgecolors='none')
-    ax2.scatter(data["PhiE frac"], data["K_out_norm"], s=area, c=data["Vsh frac"], cmap=cmap, norm=norm, alpha=0.5, edgecolors='none')
+    ax2.scatter(data["PhiE"], data["K_out_norm"], s=area, c=data["Vsh"], cmap=cmap, norm=norm, alpha=0.5, edgecolors='none')
 
     for ax in (ax1, ax2):
         for phi in list(dry_bounds.columns.values):
@@ -189,7 +189,7 @@ for well in wells:
         ax.set_xlabel('phiE')
         ax.set_ylabel('K/K0')
         cbar1 = fig1.colorbar(mappable1, ax=ax)
-        cbar1.set_label('Vsh frac')
+        cbar1.set_label('Vsh')
         legend = ax.legend(loc='upper right', shadow=True, fontsize='medium')
         ax.set_axisbelow(True)
         ax.grid()
@@ -209,29 +209,29 @@ for well in wells:
 
         with open(root + "\\" + str(well) + "_ini_params" + '.las', mode="w") as las1:
             ini = lasio.LASFile()
-            ini.depth = ["Md ft"]
+            ini.depth = ["Md"]
             ini.well["WELL"].value = str(well)
-            ini.add_curve("Md", data["Md ft"], unit=units_dict.get("Md", "ft"))
+            ini.add_curve("Md", data["Md"], unit=units_dict.get("Md", "ft"))
             #ini.add_curve("DEPTH", md_data, unit="ft")
             ini.add_curve("Bulk Modulus", data["K_sat"], unit="GPa")
             ini.add_curve("Shear Modulus", data["Mu_sat"], unit="GPa")
             ini.add_curve("Vp/Vs", data["Vp/Vs"], unit="ratio")
-            ini.add_curve("AI", data["AI m/s*g/cc"], unit="m/s*g/cc")
-            ini.add_curve("SI", data["SI m/s*g/cc"], unit="m/s*g/cc")
+            ini.add_curve("AI", data["AI"], unit="m/s*g/cc")
+            ini.add_curve("SI", data["SI"], unit="m/s*g/cc")
             ini.add_curve("Poisson's Ratio", data["Poisson's Ratio"], unit="ratio")
-            ini.add_curve("Lambda-Rho", data["Lambda-Rho GPa*g/cc"], unit="GPa")
-            ini.add_curve("Mu-Rho", data["Mu-Rho GPa*g/cc"], unit="GPa")
+            ini.add_curve("Lambda-Rho", data["Lambda-Rho"], unit="GPa")
+            ini.add_curve("Mu-Rho", data["Mu-Rho"], unit="GPa")
             ini.write(las1, version=2, fmt='%10.5g')
 
-    data["Rhob_dry"] = rho_dry_calc (data["RhoB g/cc"], data["RhoB_Fluid"], data["PhiE frac"])
+    data["Rhob_dry"] = rho_dry_calc (data["RhoB"], data["RhoB_Fluid"], data["PhiE"])
     #print("kphi/k0 max = %f, kphi/k0 min = %f" % (k_phi_const_max, k_phi_const_min))
 
     data["K_pore_max"] = k_phi_const_max * data["K_Matrix"]
-    data["K_dry_max"] = (1/(1/data["K_Matrix"] + data["PhiE frac"]/(data["K_pore_max"])))/data["K_Matrix"]
+    data["K_dry_max"] = (1/(1/data["K_Matrix"] + data["PhiE"]/(data["K_pore_max"])))/data["K_Matrix"]
     data["K_dry_max_norm"] = data["K_dry_max"] / data["K_Matrix"]
 
     data["K_pore_min"] = k_phi_const_min * data["K_Matrix"]
-    data["K_dry_min"] = (1/(1/data["K_Matrix"] + data["PhiE frac"]/(data["K_pore_min"])))/data["K_Matrix"]
+    data["K_dry_min"] = (1/(1/data["K_Matrix"] + data["PhiE"]/(data["K_pore_min"])))/data["K_Matrix"]
     data["K_dry_min_norm"] = data["K_dry_min"] / data["K_Matrix"]
 
 
@@ -239,7 +239,7 @@ for well in wells:
     data["K_pore_norm_bounded"] = np.where(data["K_pore_norm_bounded"] < k_phi_const_min, np.array(k_phi_const_min), data["K_pore_norm_bounded"])
     data["K_pore_bounded"] = data["K_pore_norm_bounded"] * data["K_Matrix"]
 
-    data["K_dry_bounded"] = k_d_n = 1/(data["PhiE frac"] /data["K_pore_bounded"] + 1/data["K_Matrix"])
+    data["K_dry_bounded"] = k_d_n = 1/(data["PhiE"] /data["K_pore_bounded"] + 1/data["K_Matrix"])
     data["K_dry_bounded_norm"] = data["K_dry_bounded"] / data["K_Matrix"]
 
 
@@ -257,16 +257,16 @@ for well in wells:
         ax.set_xlabel('phiE')
         ax.set_ylabel('K/K0')
         cbar1 = fig1.colorbar(mappable1, ax=ax)
-        cbar1.set_label('Vsh frac')
+        cbar1.set_label('Vsh')
         legend = ax.legend(loc='upper right', shadow=True, fontsize='medium')
         ax.set_axisbelow(True)
         ax.grid()
         ax.tick_params(axis='both', which='major', labelsize=6)
 
-    mappable1 = ax1.scatter(data["PhiE frac"], data["K_dry_norm"], s=area, c=data["Vsh frac"], cmap=cmap, norm=norm,
+    mappable1 = ax1.scatter(data["PhiE"], data["K_dry_norm"], s=area, c=data["Vsh"], cmap=cmap, norm=norm,
                             alpha=0.5,
                             edgecolors='none')
-    ax2.scatter(data["PhiE frac"], data["K_dry_bounded_norm"], s=area, c=data["Vsh frac"], cmap=cmap, norm=norm,
+    ax2.scatter(data["PhiE"], data["K_dry_bounded_norm"], s=area, c=data["Vsh"], cmap=cmap, norm=norm,
                 alpha=0.5, edgecolors='none')
 
     plt.tight_layout()
@@ -300,17 +300,17 @@ for well in wells:
         #print(list(zip(data["K_pore_bounded"], data["Md ft"])))
         #print(list(zip(data["Rhob_dry"], data["Md ft"])))
 
-        data[str("K_fluid_" + scenario)], data[str("RhoB_fluid_" + scenario)], data[str("K_" + scenario)], data[str("RhoB_" + scenario)], data[str("K_norm_" + scenario)] = multiple_FRM(data["PhiE frac"].tolist(), data[str("Sw_" + scenario)].tolist(), data["K_Matrix"].tolist(), data["K_pore_bounded"].tolist(), data["Rhob_dry"].tolist(), parameters["Modelled Pressure (psi)"] * 0.00689476, parameters["Modelled Temperature (C)"], output_fluid, parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR"])
+        data[str("K_fluid_" + scenario)], data[str("RhoB_fluid_" + scenario)], data[str("K_" + scenario)], data[str("RhoB_" + scenario)], data[str("K_norm_" + scenario)] = multiple_FRM(data["PhiE"].tolist(), data[str("Sw_" + scenario)].tolist(), data["K_Matrix"].tolist(), data["K_pore_bounded"].tolist(), data["Rhob_dry"].tolist(), parameters["Modelled Pressure (psi)"] * 0.00689476, parameters["Modelled Temperature (C)"], output_fluid, parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR"])
 
         #print (list(zip(data[str("K_fluid_" + scenario)], data["Md ft"])))
 
-        filter = (data["Vsh frac"] > frm_max_vsh) | (data["Md ft"] < parameters["Top ZOI (ft MD KB)"]) | (data["Md ft"] > parameters["Base ZOI (ft MD KB)"]) | (data["PhiE frac"] > frm_max_phie) | (data["PhiE frac"] < frm_min_phie)
+        filter = (data["Vsh"] > frm_max_vsh) | (data["Md"] < parameters["Top ZOI (ft MD KB)"]) | (data["Md"] > parameters["Base ZOI (ft MD KB)"]) | (data["PhiE"] > frm_max_phie) | (data["PhiE"] < frm_min_phie)
         #print (filter)
         data[str("K_" + scenario)] = data["K_sat"].where(filter, data[str("K_" + scenario)])
         data[str("K GPa_" + scenario)] =  data[str("K_" + scenario)] / np.power(10, 9)
-        data[str("RhoB_" + scenario)] = data["RhoB g/cc"].where(filter, data[str("RhoB_" + scenario)])
+        data[str("RhoB_" + scenario)] = data["RhoB"].where(filter, data[str("RhoB_" + scenario)])
         #print (data[str("Sw_" + scenario)])
-        data[str("Sw_" + scenario)] = data["Sw frac"].where(filter, data[str("Sw_" + scenario)])
+        data[str("Sw_" + scenario)] = data["Sw"].where(filter, data[str("Sw_" + scenario)])
         #print(data[str("Sw_" + scenario)])
         data[str("Vp_" + scenario)], data[str("Vs_" + scenario)] = calc_vp_vs(data[str("K_" + scenario)], data["Mu_sat"], data[str("RhoB_" + scenario)])
 
@@ -327,16 +327,9 @@ for well in wells:
             with open(root + "\\" + str(well) + "_" + str(scenario) + '.las', mode="w") as las2:
                 # las_2 = open(las2_out, mode="w")
                 frm = lasio.LASFile()
-                frm.depth = data["Md ft"]
+                frm.depth = data["Md"]
                 frm.well["WELL"].value = str(well)
-                frm.add_curve("Md", data["Md ft"], unit=units_dict.get("Md", "ft"))
-                frm.add_curve("Vp", data["Vp_"+ scenario], unit = "m/s")
-                frm.add_curve("Vs", data["Vs_" + scenario], unit = "m/s")
-                frm.add_curve("RhoB", data["RhoB_"+ scenario], unit = "g/cc")
-                frm.add_curve("PhiE", data["PhiE frac"], unit = "frac")
-                frm.add_curve("PhiT", data["PhiT frac"], unit = "frac")
-                frm.add_curve("Vsh", data["Vsh frac"], unit = "frac")
-                frm.add_curve("Sw", data["Sw_" + scenario], unit = "frac")
+                frm.add_curve("Md", data["Md"], unit=units_dict.get("Md", "ft"))
                 frm.add_curve("Bulk Modulus", data["K GPa_" + scenario], unit="GPa")
                 frm.add_curve("Shear Modulus", data["Mu_sat GPa"], unit="GPa")
                 frm.add_curve("Vp/Vs", data["Vp/Vs_" + scenario], unit="ratio")
@@ -345,6 +338,13 @@ for well in wells:
                 frm.add_curve("Poisson's Ratio", data["Poisson's Ratio_" + scenario], unit="ratio")
                 frm.add_curve("Lambda-Rho", data["Lambda-Rho_" + scenario], unit="GPa")
                 frm.add_curve("Mu-Rho", data["Mu-Rho_" + scenario], unit="GPa")
+                frm.add_curve("Vp", data["Vp_"+ scenario], unit = "m/s")
+                frm.add_curve("Vs", data["Vs_" + scenario], unit = "m/s")
+                frm.add_curve("RhoB", data["RhoB_"+ scenario], unit = "g/cc")
+                frm.add_curve("PhiE", data["PhiE"], unit = "frac")
+                frm.add_curve("PhiT", data["PhiT"], unit = "frac")
+                frm.add_curve("Vsh", data["Vsh"], unit = "frac")
+                frm.add_curve("Sw", data["Sw_" + scenario], unit = "frac")
                 frm.write(las2, version=2, fmt='%10.5g')
 
         #print((data["Vp_" + scenario]))
@@ -354,24 +354,24 @@ for well in wells:
 
 
         for ax, log in zip( [ax1, ax2, ax3], ["Vp", "Vs", "RhoB"]):
-            ax.plot((data[str(log + "_" + scenario)]), data["Md ft"], lw = 1, label = str(log + "_" + scenario))  # , label = scenario, lw = 1)
+            ax.plot((data[str(log + "_" + scenario)]), data["Md"], lw = 1, label = str(log + "_" + scenario))  # , label = scenario, lw = 1)
             ax.set_title(log)
             ax.set_xlabel(log + " " + units_dict.get(log,""), fontsize=8)
 
         for ax, log in zip( [ax7, ax9], ["K GPa", "RhoB"]):
-            ax.plot((data[str(log + "_" + scenario)]), data["Md ft"], lw = 1, label = str(log + "_" + scenario))  # , label = scenario, lw = 1)
+            ax.plot((data[str(log + "_" + scenario)]), data["Md"], lw = 1, label = str(log + "_" + scenario))  # , label = scenario, lw = 1)
             ax.set_title(log)
             ax.set_xlabel(log + " " + units_dict.get(log,""), fontsize=8)
 
 
 
         for ax, log in zip([ax13, ax14, ax15], ["Vp/Vs", "AI", "SI"]):
-            ax.plot((data[str(log + "_" + scenario)]), data["Md ft"], lw=1, label = str(log + "_" + scenario) )  # , label = scenario, lw = 1)
+            ax.plot((data[str(log + "_" + scenario)]), data["Md"], lw=1, label = str(log + "_" + scenario) )  # , label = scenario, lw = 1)
             ax.set_title(log)
             ax.set_xlabel(log + " " + units_dict.get(log, ""), fontsize=8)
 
         for ax, log in zip([ax19, ax20], ["Lambda-Rho", "Mu-Rho"]):
-            ax.plot((data[str(log + "_" + scenario)]), data["Md ft"], lw=1, label = str(log + "_" + scenario))  # , label = scenario, lw = 1)
+            ax.plot((data[str(log + "_" + scenario)]), data["Md"], lw=1, label = str(log + "_" + scenario))  # , label = scenario, lw = 1)
             ax.set_title(log)
             ax.set_xlabel(log + " " + units_dict.get(log, ""), fontsize=8)
 
@@ -379,13 +379,13 @@ for well in wells:
             ax.set_xlim(0, 1)
         for ax in [ax5, ax11, ax17, ax22]:
             ax.set_xlim(0, 1)
-        for ax in [ax6, ax12, ax18]:
+        for ax in [ax6, ax12, ax18, ax23]:
             ax.set_xlim(0, 0.5)
 
     for ax, log in zip([ax4, ax5, ax6, ax10, ax11, ax12, ax16, ax17, ax18, ax21, ax22, ax23, ax8],
                        ["Vsh", "Sw", "PhiE", "Vsh", "Sw", "PhiE", "Vsh", "Sw", "PhiE", "Vsh", "Sw", "PhiE",
                         "Mu_sat"]):
-        ax.plot((data[log + " " + units_dict.get(log, "")]), data["Md ft"], lw=1,
+        ax.plot((data[log]), data["Md"], lw=1,
                 label=str(log))  # , label = scenario, lw = 1)
         ax.set_title(log)
         ax.set_xlabel(log + " " + units_dict.get(log, ""), fontsize=8)
