@@ -36,9 +36,9 @@ from fluid import batzle_wang
 from FRM_function import  HS_2_phase_L, fluids_calc, reuss_fluids, sat, dry_rock, fluid_sub_k, rho_dry_calc, multiple_FRM, calc_vp_vs
 
 check_bounds_only = False
-show_charts = True
+show_charts = False
 save_las = True
-save_fig = False
+save_fig = True
 
 
 """
@@ -46,9 +46,9 @@ This module
 """
 
 root = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\FORCE_catcher\INI'
-parameters = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\FORCE_catcher\FRM_parameters.txt'
+parameters_file = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\FORCE_catcher\FRM_parameters.txt'
 
-wells = ["21_24-1"]
+wells = ["21_24-1", "21_24-4","21_24-5","21_24-6","21_24-7","21_25-8","21_25-9","21_25-10"]
 null = -999.25
 
 # Clay parameters
@@ -63,8 +63,8 @@ k_qtz = 37.0 * pow(10, 9)  # Bulk modulus of quartz in Pa
 rho_qtz = 2.65 * pow(10, 3)  #Density of quartz in kg/m^3
 
 output_sw = [0.05, 0.3, 0.95, 1]
-output_fluid = 'gas'
-scenarios = ["95GAS", "70GAS", "05GAS", "100WTR"]
+output_fluid = 'oil'
+scenarios = ["95OIL", "70OIL", "05OIL", "100WTR"]
 
 #fluid sub cutoffs
 frm_max_vsh = 1#0.3 #max Vsh to apply FRM to
@@ -95,16 +95,17 @@ def data_load(filename):
     return logs_df, units_dict
 
 # load frm parameters from tab delimited txt file
-def parameters_load(parameters, well):
-    parameters = pd.read_table(parameters)
-    parameters.set_index(["Well"], inplace = True)
-    parameters = parameters.loc[well]
+def parameters_load(parameters_file, well):
+    parameters_all = pd.read_table(parameters_file, sep = "\t", skip_blank_lines = True)
+    parameters_all.set_index(["Well"], inplace = True)
+    parameters = parameters_all.loc[well].copy()
 
     return parameters
 
 filepaths = []
 
 for well in wells:
+    plt.close()
 
     path = root + "\\" + well + ".las"
     fig1_name = (root +"\\" + well + "_dry_rock_bounds.png")
@@ -129,14 +130,18 @@ for well in wells:
 
     #print(data)
 
-    parameters = parameters_load(parameters, well)
+    parameters = parameters_load(parameters_file, well)
+    if parameters["In Situ Fluid"] == "Oil":
+        parameters["In Situ Fluid"] = "oil"
+    elif parameters["In Situ Fluid"] == "Gas":
+        parameters["In Situ Fluid"] = "gas"
     #min_md = parameters["Top ZOI (ft MD KB)"]
     #print (min_md)
     #data = data.loc[data["Md ft"] > min_md]
 
     data["K_Matrix"], data["Mu_Matrix"] =  HS_2_phase_L(k_qtz, k_clay, mu_qtz, mu_clay, data["Vsh"])
 
-    rho_brine, k_brine, rho_h, k_h = fluids_calc(parameters["In Situ Pressure (psi)"]* 0.00689476, parameters["In Situ Temperature (C)"], parameters["In Situ Fluid"], parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR"])
+    rho_brine, k_brine, rho_h, k_h = fluids_calc(parameters["In Situ Pressure (psi)"]* 0.00689476, parameters["In Situ Temperature C"], parameters["In Situ Fluid"], parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR (scf/bbl)"])
     data["K_Fluid"], data["RhoB_Fluid"] = reuss_fluids(rho_brine, k_brine, rho_h, k_h, data["Sw"])
 
     data["K_sat"], data["Mu_sat"] = (sat(data["Vp"], data["Vs"], data["RhoB"]))
@@ -300,7 +305,7 @@ for well in wells:
         #print(list(zip(data["K_pore_bounded"], data["Md ft"])))
         #print(list(zip(data["Rhob_dry"], data["Md ft"])))
 
-        data[str("K_fluid_" + scenario)], data[str("RhoB_fluid_" + scenario)], data[str("K_" + scenario)], data[str("RhoB_" + scenario)], data[str("K_norm_" + scenario)] = multiple_FRM(data["PhiE"].tolist(), data[str("Sw_" + scenario)].tolist(), data["K_Matrix"].tolist(), data["K_pore_bounded"].tolist(), data["Rhob_dry"].tolist(), parameters["Modelled Pressure (psi)"] * 0.00689476, parameters["Modelled Temperature (C)"], output_fluid, parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR"])
+        data[str("K_fluid_" + scenario)], data[str("RhoB_fluid_" + scenario)], data[str("K_" + scenario)], data[str("RhoB_" + scenario)], data[str("K_norm_" + scenario)] = multiple_FRM(data["PhiE"].tolist(), data[str("Sw_" + scenario)].tolist(), data["K_Matrix"].tolist(), data["K_pore_bounded"].tolist(), data["Rhob_dry"].tolist(), parameters["Modelled Pressure (psi)"] * 0.00689476, parameters["Modelled Temperature C"], output_fluid, parameters["Salinity (l/l)"], parameters["Gas Gravity"], parameters["Oil API"], parameters["GOR (scf/bbl)"])
 
         #print (list(zip(data[str("K_fluid_" + scenario)], data["Md ft"])))
 
@@ -414,6 +419,8 @@ for well in wells:
 
     if show_charts == True:
         plt.show()
+
+
 
 
 
