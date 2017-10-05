@@ -7,8 +7,8 @@ from pandas.plotting import scatter_matrix
 
 
 plt.rcParams["font.size"] = 11
-plt.rcParams["figure.figsize"] = (8., 6.)
-plt.rcParams["figure.dpi"] = 400
+#plt.rcParams["figure.figsize"] = (8., 6.)
+#plt.rcParams["figure.dpi"] = 400
 plt.rcParams["lines.markersize"] = 6
 plt.rcParams["lines.markeredgewidth"] = 0.1
 plt.rcParams['patch.edgecolor'] = 'k'
@@ -36,7 +36,7 @@ vary_class_w_sw = True
 null = -999.25
 
 rebuild_database = True
-construct_graph = False
+construct_graph = True
 
 def data_load(filename):
     data = lasio.read(filename)

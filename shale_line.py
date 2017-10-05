@@ -3,13 +3,15 @@ import pandas as pd
 import lasio
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from Catcher_markers import markers
+from markers_dict import markers
 import sys
 
 # Las file location. This las file should include the TVDml - otherwise run "depth logs" and "Merge las files" first.
-root = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\FORCE_catcher\FRM\TVD'
-wells = ["21_24-1", "21_24-4", "21_24-5", "21_24-6", "21_24-7", "21_25-10", "21_25-8","21_25-9"]#["21_24-1"]
+root = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\example_well_log'
+wells = ["WELL"]
+# recommended to run this on 100% water only
 scenarios = ["100WTR"] #,"05OIL", "70OIL", "95OIL", "05GAS", "70GAS", "95GAS"]
+null = -999.25
 
 # assumes that files are named root\[well]_[scenario]
 suffixes = list(map(lambda x: "_" + x, scenarios))
@@ -270,7 +272,9 @@ ax3.plot(rhob_y_popt_matrix, z, c = 'blue', label =  "Matrix lobf")
 #print (func(shale_df["TVDML"], *popt))
 
 #ax2.plot(y_poly, x, c = 'r', label = "Polynomial lobf")
+ax1.legend(loc='upper right', shadow=True, fontsize='x-small')
 ax2.legend(loc='upper right', shadow=True, fontsize='x-small')
+ax3.legend(loc='upper right', shadow=True, fontsize='x-small')
 #print (popt)
 
 ax4.plot(vp_y_popt_matrix, z, c = 'green', label = "Exponential lobf")
