@@ -7,9 +7,9 @@ import numpy as np
 #requires pandas, numpy and lasio libraries
 #multiple wells and scenarios can be specified and converted in a single run
 
-root = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\FORCE_catcher\INI'
-scenarios = [""]
-wells = ["21_24-1"]
+root = r'C:\Users\joanna.wallis\Documents\FORCE_presentation\FORCE_catcher\FRM\TVD'
+scenarios = ["_100WTR"]
+wells = ["21_24-1", "21_24-4","21_24-5","21_24-6","21_24-7","21_25-8","21_25-9","21_25-10"]
 null = -999.25
 
 filepaths = []

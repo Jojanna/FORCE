@@ -1,0 +1,2 @@
+Well	Top ZOI (ft MD KB)	Base ZOI (ft MD KB)	Column Thickness (m)	Vs log	Mean Depth	In Situ Temperature C	Modelled Temperature C	In Situ Pressure (psi)	Modelled Pressure (psi)	Oil API	Gas Gravity	GOR (scf/bbl)	Salinity (l/l)	In Situ Fluid
+WELL	10666	10765	26.21	TRUE	2055.695	121.1867968	121.1867968	5210	5820	33	0.6	206	143500	Oil

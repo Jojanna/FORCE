@@ -1,0 +1,2 @@
+Well Name	Well X (m)	Well Y (m)	KB Elev. (ft)	WD (ft)	TD (ft)
+WELL	529090	179645	60	200	11400
